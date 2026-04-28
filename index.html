@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Nexor Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+html, body{
+  margin:0;
+  padding:0;
+  font-family:sans-serif;
+  background:#050505;
+  color:white;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  height:auto;
+}
+
+canvas{
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:-1;
+  width:100%;
+  height:100%;
+}
+
+#loading{
+  position:fixed;
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:#000;
+  transition:.5s;
+  z-index:10;
+}
+
+#title{
+  font-size:42px;
+  font-weight:700;
+  letter-spacing:2px;
+}
+
+#bar{
+  width:65%;
+  height:8px;
+  background:#111;
+  border-radius:20px;
+  margin-top:20px;
+  overflow:hidden;
+}
+
+#progress{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#00f0ff,#0077ff);
+}
+
+#text{
+  margin-top:12px;
+  font-size:14px;
+  opacity:.6;
+}
+
+#app{
+  display:none;
+  padding:20px;
+  min-height:100vh;
+}
+
+.card{
+  background:rgba(255,255,255,0.05);
+  border-radius:16px;
+  padding:15px;
+  margin:12px 0;
+  backdrop-filter:blur(10px);
+  transition:.2s;
+}
+
+.card:hover{
+  transform:scale(1.02);
+  box-shadow:0 0 20px #00f0ff33;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.desc{
+  font-size:13px;
+  opacity:.6;
+  margin-top:5px;
+}
+
+.switch{
+  width:45px;
+  height:24px;
+  background:#222;
+  border-radius:20px;
+  position:relative;
+  cursor:pointer;
+  transition:.3s;
+}
+
+.switch::before{
+  content:"";
+  position:absolute;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:white;
+  top:2px;
+  left:2px;
+  transition:.3s;
+}
+
+.switch.active{
+  background:#00f0ff;
+  box-shadow:0 0 10px #00f0ff;
+}
+
+.switch.active::before{
+  transform:translateX(21px);
+}
+
+button{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(90deg,#00f0ff,#0077ff);
+  font-weight:600;
+  margin-top:20px;
+  color:black;
+}
+
+#inject{
+  position:fixed;
+  bottom:-100%;
+  left:0;
+  width:100%;
+  height:40%;
+  background:rgba(20,20,20,0.95);
+  border-radius:20px 20px 0 0;
+  transition:.5s;
+  padding:20px;
+  text-align:center;
+  backdrop-filter:blur(10px);
+  z-index:999;
+}
+
+.ring{
+  width:80px;
+  height:80px;
+  border:5px solid #111;
+  border-top:5px solid #00f0ff;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:auto;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg);}
+}
+
+.log{
+  margin-top:15px;
+  opacity:.8;
+  font-size:14px;
+}
+
+.ff-title{
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:10px;
+  color:#00f0ff;
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div id="loading">
+  <div id="title">NEXOR PRO</div>
+  <div id="bar"><div id="progress"></div></div>
+  <div id="text">Initializing system...</div>
+</div>
+
+<div id="app">
+
+<div class="card"><div class="row">Smooth Drag <div class="switch"></div></div><div class="desc">Aim lebih halus & stabil</div></div>
+<div class="card"><div class="row">Easy Drag <div class="switch"></div></div><div class="desc">Drag lebih ringan & cepat</div></div>
+<div class="card"><div class="row">Max Sensitivity <div class="switch"></div></div><div class="desc">Sens maksimal tanpa delay</div></div>
+<div class="card"><div class="row">Semi Headlock <div class="switch"></div></div><div class="desc">Aim lebih nempel ke target</div></div>
+<div class="card"><div class="row">Stabilizer Aim <div class="switch"></div></div><div class="desc">Kurangi goyangan aim</div></div>
+<div class="card"><div class="row">Stabilizer Network <div class="switch"></div></div><div class="desc">Koneksi lebih stabil</div></div>
+<div class="card"><div class="row">Cleaner Cache <div class="switch"></div></div><div class="desc">Bersihin file sampah</div></div>
+<div class="card"><div class="row">Optimized Phone <div class="switch"></div></div><div class="desc">Boost performa device</div></div>
+<div class="card"><div class="row">Tuning Sensitivity <div class="switch"></div></div><div class="desc">Setting sens lebih presisi</div></div>
+<div class="card"><div class="row">Responsive Touch <div class="switch"></div></div><div class="desc">Respons layar lebih cepat</div></div>
+
+<button onclick="startInject()">FREE FIRE - INJECT</button>
+</div>
+
+<div id="inject">
+  <div class="ff-title">FREE FIRE CONNECTING</div>
+  <div class="ring"></div>
+  <div class="log" id="logText">Starting...</div>
+</div>
+
+<script>
+function playToggleSound(isOn){
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.type = "sine";
+  oscillator.frequency.value = isOn ? 900 : 500;
+
+  gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  oscillator.start();
+  oscillator.stop(audioCtx.currentTime + 0.08);
+}
+
+document.querySelectorAll(".switch").forEach(s=>{
+  s.onclick=()=>{
+    s.classList.toggle("active");
+
+    const isOn = s.classList.contains("active");
+    playToggleSound(isOn);
+
+    if(navigator.vibrate){
+      navigator.vibrate(isOn ? 50 : 20);
+    }
+  };
+});
+
+let p=0;
+let load=setInterval(()=>{
+  p++;
+  progress.style.width=p+"%";
+  if(p>=100){
+    clearInterval(load);
+    loading.style.opacity="0";
+    setTimeout(()=>{
+      loading.style.display="none";
+      app.style.display="block";
+    },500);
+  }
+},25);
+
+const c=document.getElementById("bg");
+const ctx=c.getContext("2d");
+c.width=innerWidth;
+c.height=innerHeight;
+
+let particles=[];
+for(let i=0;i<80;i++){
+  particles.push({
+    x:Math.random()*c.width,
+    y:Math.random()*c.height
+  });
+}
+
+function animate(){
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle="#00f0ff";
+
+  particles.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,1.5,0,Math.PI*2);
+    ctx.fill();
+    p.y+=0.4;
+    if(p.y>c.height)p.y=0;
+  });
+
+  requestAnimationFrame(animate);
+}
+animate();
+
+function startInject(){
+  let panel=document.getElementById("inject");
+  let text=document.getElementById("logText");
+
+  panel.style.bottom="0";
+
+  if(navigator.vibrate){
+    navigator.vibrate([50,50,50]);
+  }
+
+  let steps=[
+    "Connecting...",
+    "Syncing config...",
+    "Applying tweaks...",
+    "Optimizing...",
+    "Finalizing...",
+    "SUCCESS ✓"
+  ];
+
+  steps.forEach((t,i)=>{
+    setTimeout(()=>{
+      text.innerText=t;
+    },i*1200);
+  });
+
+  setTimeout(()=>{
+    const link=document.createElement("a");
+    link.href="com.dts.freefireth://";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  },7500);
+
+  setTimeout(()=>{
+    panel.style.bottom="-100%";
+  },10000);
+}
+</script>
+
+</body>
+</html>
